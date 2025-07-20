@@ -90,19 +90,22 @@ export const PrescriptionForm = ({ onSubmit }: PrescriptionFormProps) => {
   const handleSubmit = async (data: PrescriptionFormData) => {
     setIsSubmitting(true);
     try {
+      // Prepare the data for insertion, ensuring room_number is handled correctly
+      const insertData = {
+        name: data.name,
+        age: data.age,
+        gender: data.gender,
+        department: data.department,
+        type: data.type,
+        room_number: data.room_number && data.room_number.trim() !== '' ? data.room_number.trim() : null,
+        address: data.address && data.address.trim() !== '' ? data.address.trim() : null,
+        aadhar_number: data.aadhar_number && data.aadhar_number.trim() !== '' ? data.aadhar_number.trim() : null,
+        mobile_number: data.mobile_number && data.mobile_number.trim() !== '' ? data.mobile_number.trim() : null,
+      };
+
       const { data: prescription, error } = await supabase
         .from("prescriptions")
-        .insert([{
-          name: data.name,
-          age: data.age,
-          gender: data.gender,
-          department: data.department,
-          type: data.type,
-          room_number: data.room_number || null,
-          address: data.address || null,
-          aadhar_number: data.aadhar_number || null,
-          mobile_number: data.mobile_number || null,
-        }])
+        .insert([insertData])
         .select()
         .single();
 
@@ -118,9 +121,16 @@ export const PrescriptionForm = ({ onSubmit }: PrescriptionFormProps) => {
       setNextRegistrationNumber(prev => prev ? prev + 1 : 1);
     } catch (error) {
       console.error("Error creating prescription:", error);
+      
+      // More detailed error handling
+      let errorMessage = "Failed to create prescription. Please try again.";
+      if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = `Database error: ${error.message}`;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create prescription. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
